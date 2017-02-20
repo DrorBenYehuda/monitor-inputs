@@ -15,6 +15,7 @@
 //Beginning of Auto generated function prototypes by Atmel Studio
 void enterErrorMode();
 void exitErrorMode();
+void printStates();
 //End of Auto generated function prototypes by Atmel Studio
 
 
@@ -39,12 +40,23 @@ unsigned long debounceButtonThreshold=10; //time to debounce for button, tweak i
 unsigned long debounceInputThreshold=10; //time to debounce for inputs, tweak if needed
 
 //debouncers
-Bounce  opBouncer  = Bounce(); 
+Bounce  opBouncer  = Bounce();
 Bounce  resetBouncer  = Bounce();
 Bounce  in1Bouncer  = Bounce();
 Bounce  in2Bouncer  = Bounce();
 
 unsigned long toggleTime; //timestamp when button press started
+void printStates(int val){
+  if(val==LOW){
+    Serial.print("LOW \n");
+  }
+  else if(val==HIGH){
+    Serial.print("HIGH \n");
+  }
+  else{
+    Serial.print("WAAAAAAT \n");
+  }
+}
 //Write error to EEPROM, turn off relay and sets LEDs
 void enterErrorMode(){
   EEPROM.write(ErrorCodeAddress,1);
@@ -69,10 +81,10 @@ void setup(){
   Serial.begin(9600);
   Serial.write("Hello guys! \n");
   //initialize pins
-  pinMode(opInput,INPUT);
-  pinMode(monitorIn1,INPUT);
-  pinMode(monitorIn2,INPUT);
-  pinMode(resetPin,INPUT);
+  pinMode(opInput,INPUT_PULLUP);
+  pinMode(monitorIn1,INPUT_PULLUP);
+  pinMode(monitorIn2,INPUT_PULLUP);
+  pinMode(resetPin,INPUT_PULLUP);
   pinMode(redLED,OUTPUT);
   pinMode(greenLED,OUTPUT);
   //attaching debouncers
@@ -125,12 +137,7 @@ void loop() {
     int currentOp=opBouncer.read();
     if(currentOp!=opState){
       Serial.write("operation mode changed to ");
-      if(currentOp==HIGH){
-        Serial.write("HIGH \n");
-      }
-      else{
-        Serial.write("LOW \n");
-      }
+      printStates(currentOp);
       opState=currentOp;
       delay(initWaitThershold);
       isError=false;
@@ -141,10 +148,9 @@ void loop() {
     int in1state=in1Bouncer.read();
     int in2state=in2Bouncer.read();
     Serial.write("input 1 state: ");
-    Serial.write(in1state);
+    printStates(in1state);
     Serial.write(" input 2 state: ");
-    Serial.write(in2state);
-    Serial.write("\n");
+    printStates(in2state);
     if (in1state!=opState){
       Serial.write("error in input pin 1 \n");
       enterErrorMode();
@@ -156,4 +162,3 @@ void loop() {
   }
   delay(1);
 }
-
