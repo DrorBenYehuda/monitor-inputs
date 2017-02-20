@@ -36,8 +36,8 @@ unsigned long initWaitThershold=1.5*1000; //wait 1.5 secs from opState change to
 unsigned long millisHeld=0;    // How long the button was held (milliseconds)
 int ErrorCodeAddress = 0; //address for storing error code in EEPROM
 int resetTime=3*1000; //time to reset in milliseconds
-unsigned long debounceButtonThreshold=10; //time to debounce for button, tweak if needed
-unsigned long debounceInputThreshold=10; //time to debounce for inputs, tweak if needed
+unsigned long debounceButtonThreshold=50; //time to debounce for button, tweak if needed
+unsigned long debounceInputThreshold=50; //time to debounce for inputs, tweak if needed
 
 //debouncers
 Bounce  opBouncer  = Bounce();
@@ -72,6 +72,7 @@ void enterErrorMode(){
 void exitErrorMode(){
   EEPROM.write(ErrorCodeAddress,0);
   isError=false;
+  opState=3;
   digitalWrite(redLED, LOW);
   digitalWrite(greenLED, HIGH);
   digitalWrite(relayPin, HIGH);
@@ -81,10 +82,10 @@ void setup(){
   Serial.begin(9600);
   Serial.write("Hello guys! \n");
   //initialize pins
-  pinMode(opInput,INPUT_PULLUP);
-  pinMode(monitorIn1,INPUT_PULLUP);
-  pinMode(monitorIn2,INPUT_PULLUP);
-  pinMode(resetPin,INPUT_PULLUP);
+  pinMode(opInput,INPUT);
+  pinMode(monitorIn1,INPUT);
+  pinMode(monitorIn2,INPUT);
+  pinMode(resetPin,INPUT);
   pinMode(redLED,OUTPUT);
   pinMode(greenLED,OUTPUT);
   //attaching debouncers
@@ -110,8 +111,11 @@ void setup(){
 }
 
 void loop() {
+  in1Bouncer.update();
+  in2Bouncer.update();
+  resetBouncer.update();
+  opBouncer.update();
   if(isError){
-    resetBouncer.update();
     //Count pressing time
     int currentButtonState=resetBouncer.read();
     if (currentButtonState==HIGH){
@@ -133,7 +137,6 @@ void loop() {
       }
   }
   else{
-    opBouncer.update();
     int currentOp=opBouncer.read();
     if(currentOp!=opState){
       Serial.write("operation mode changed to ");
@@ -143,8 +146,6 @@ void loop() {
       isError=false;
       return;
     }
-    in1Bouncer.update();
-    in2Bouncer.update();
     int in1state=in1Bouncer.read();
     int in2state=in2Bouncer.read();
     Serial.write("input 1 state: ");
