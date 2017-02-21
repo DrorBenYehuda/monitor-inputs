@@ -36,8 +36,8 @@ unsigned long initWaitThershold=5*1000; //wait 5 secs from opState change to vol
 unsigned long millisHeld=0;    // How long the button was held (milliseconds)
 int ErrorCodeAddress = 0; //address for storing error code in EEPROM
 int resetTime=3*1000; //time to reset in milliseconds
-unsigned long debounceButtonThreshold=50; //time to debounce for button, tweak if needed
-unsigned long debounceInputThreshold=50; //time to debounce for inputs, tweak if needed
+unsigned long debounceButtonThreshold=100; //time to debounce for button, tweak if needed
+unsigned long debounceInputThreshold=100; //time to debounce for inputs, tweak if needed
 
 //debouncers
 Bounce  opBouncer  = Bounce();
