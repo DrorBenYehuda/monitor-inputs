@@ -31,8 +31,8 @@ int relayPin=10; //Pin for relay (LOW if in error mode, HIGH else) (NC mode, neg
 int resetPin=7; //Reset button
 int greenLED=9; //green led pin
 int redLED=8;  //red led pin
-int initWaitTimer=0;
-unsigned long initWaitThershold=1.5*1000; //wait 1.5 secs from opState change to voltage check
+unsigned long millisSinceChange=0;
+unsigned long initWaitThershold=5*1000; //wait 5 secs from opState change to voltage check
 unsigned long millisHeld=0;    // How long the button was held (milliseconds)
 int ErrorCodeAddress = 0; //address for storing error code in EEPROM
 int resetTime=3*1000; //time to reset in milliseconds
@@ -61,6 +61,7 @@ void printStates(int val){
 void enterErrorMode(){
   EEPROM.write(ErrorCodeAddress,1);
   isError=true;
+  millisSinceChange=0;
   digitalWrite(redLED, HIGH);
   digitalWrite(greenLED, LOW);
   digitalWrite(relayPin, LOW);
@@ -73,6 +74,7 @@ void exitErrorMode(){
   EEPROM.write(ErrorCodeAddress,0);
   isError=false;
   opState=3;
+  millisSinceChange=0;
   digitalWrite(redLED, LOW);
   digitalWrite(greenLED, HIGH);
   digitalWrite(relayPin, HIGH);
@@ -115,6 +117,7 @@ void loop() {
   in2Bouncer.update();
   resetBouncer.update();
   opBouncer.update();
+  //if in error mode, check for button presses
   if(isError){
     //Count pressing time
     int currentButtonState=resetBouncer.read();
@@ -142,23 +145,26 @@ void loop() {
       Serial.write("operation mode changed to ");
       printStates(currentOp);
       opState=currentOp;
-      delay(initWaitThershold);
+      millisSinceChange=millis();
       isError=false;
       return;
     }
-    int in1state=in1Bouncer.read();
-    int in2state=in2Bouncer.read();
-    Serial.write("input 1 state: ");
-    printStates(in1state);
-    Serial.write(" input 2 state: ");
-    printStates(in2state);
-    if (in1state!=opState){
-      Serial.write("error in input pin 1 \n");
-      enterErrorMode();
-    }
-    else if (in2state!=opState){
-      Serial.write("error in input pin 2 \n");
-      enterErrorMode();
+    //if passed time threshold, check inputs
+    if(millis()-millisSinceChange>initWaitThershold){
+      int in1state=in1Bouncer.read();
+      int in2state=in2Bouncer.read();
+      Serial.write("input 1 state: ");
+      printStates(in1state);
+      Serial.write(" input 2 state: ");
+      printStates(in2state);
+      if (in1state!=opState){
+        Serial.write("error in input pin 1 \n");
+        enterErrorMode();
+      }
+      else if (in2state!=opState){
+        Serial.write("error in input pin 2 \n");
+        enterErrorMode();
+     }
     }
   }
   delay(1);
